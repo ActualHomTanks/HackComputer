@@ -9,6 +9,8 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "HackVMTranslator", "HackVMT
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "JackAnalyzer", "JackAnalyzer\JackAnalyzer.vcxproj", "{BA73A102-ACC1-4F1F-9007-5AF2FCCFE88B}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "JackCompiler", "JackCompiler\JackCompiler.vcxproj", "{55489C3E-282A-45A1-A134-3036D9380CD1}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|x64 = Debug|x64
@@ -41,6 +43,14 @@ Global
 		{BA73A102-ACC1-4F1F-9007-5AF2FCCFE88B}.Release|x64.Build.0 = Release|x64
 		{BA73A102-ACC1-4F1F-9007-5AF2FCCFE88B}.Release|x86.ActiveCfg = Release|Win32
 		{BA73A102-ACC1-4F1F-9007-5AF2FCCFE88B}.Release|x86.Build.0 = Release|Win32
+		{55489C3E-282A-45A1-A134-3036D9380CD1}.Debug|x64.ActiveCfg = Debug|x64
+		{55489C3E-282A-45A1-A134-3036D9380CD1}.Debug|x64.Build.0 = Debug|x64
+		{55489C3E-282A-45A1-A134-3036D9380CD1}.Debug|x86.ActiveCfg = Debug|Win32
+		{55489C3E-282A-45A1-A134-3036D9380CD1}.Debug|x86.Build.0 = Debug|Win32
+		{55489C3E-282A-45A1-A134-3036D9380CD1}.Release|x64.ActiveCfg = Release|x64
+		{55489C3E-282A-45A1-A134-3036D9380CD1}.Release|x64.Build.0 = Release|x64
+		{55489C3E-282A-45A1-A134-3036D9380CD1}.Release|x86.ActiveCfg = Release|Win32
+		{55489C3E-282A-45A1-A134-3036D9380CD1}.Release|x86.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

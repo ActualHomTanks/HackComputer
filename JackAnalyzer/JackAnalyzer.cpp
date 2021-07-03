@@ -380,11 +380,6 @@ private:
 		fo << indentation;
 	}
 
-	std::string get_prev_token()
-	{
-		
-	}
-
 	std::string get_new_token()
 	{
 		std::string line;
@@ -1468,10 +1463,14 @@ int main(int argc, char* argv[])
 			}
 		}		
 	}
-	/*Tokenizer tokenizer("Square.jack");
-	tokenizer.tokenize();
-	Parser parser("SquareT.xml");
-	parser.parse();*/
+	else {
+		Tokenizer tokenizer(argv[1]);
+		tokenizer.tokenize();
+
+		Parser parser(std::string(argv[1]) + "T.xml");
+		parser.parse();
+	}
+
 
 	std::cout << "Jack Analyzer finished" << std::endl;
 }
