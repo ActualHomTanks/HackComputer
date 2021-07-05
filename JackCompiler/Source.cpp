@@ -1,9 +1,6 @@
 #include <iostream>
 #include <string>
-#include <vector>
-#include <fstream>
-#include <sstream>
-#include <algorithm>
+#include <unordered_map>
 #include <filesystem>
 #include "Helpers.hpp"
 #include "Tokenizer.hpp"
@@ -44,6 +41,14 @@ std::string return_extension(std::string const& f)
 	return std::string(f.substr(first_pos, f.size() - first_pos));
 }
 
+struct box
+{
+	std::string type;
+	std::string kind;
+	size_t index;
+
+	box(std::string type, std::string kind, size_t index) : type(type), kind(kind), index(index) {}
+};
 
 int main(int argc, char* argv[])
 {
@@ -66,10 +71,23 @@ int main(int argc, char* argv[])
 		Tokenizer tokenizer(argv[1]);
 		tokenizer.tokenize();
 
-		Parser parser(std::string(argv[1]) + "T.xml");
+		Parser parser(std::string(extract_name(argv[1])) + "T.xml");
 		parser.parse();
 	}
 
+	std::ofstream file;
+	file.open("test.txt");
+	file << "hello";
+
+	std::streampos pos = file.tellp();
+
+	file << "bruh";
+
+	file.seekp(pos);
+
+	file << "w";
+
+	file.close();
 
 	std::cout << "Jack Analyzer finished" << std::endl;
 }

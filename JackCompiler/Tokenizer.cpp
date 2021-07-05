@@ -42,7 +42,7 @@ void Tokenizer::close_files()
 
 bool Tokenizer::is_symbol(char c) const
 {
-	for (auto e : key_tokens.symbols) {
+	for (auto& e : key_tokens.symbols) {
 		if (e[0] == c) {
 			return true;
 		}
@@ -53,7 +53,7 @@ bool Tokenizer::is_symbol(char c) const
 
 bool Tokenizer::is_keyword(std::string const& key)
 {
-	for (auto e : key_tokens.keywords) {
+	for (auto& e : key_tokens.keywords) {
 		if (e == key) {
 			return true;
 		}

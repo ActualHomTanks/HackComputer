@@ -1,6 +1,5 @@
 #include "Parser.hpp"
 
-
 Parser::Parser(std::string const& filename)
 {
 	open_files(filename);
@@ -11,12 +10,8 @@ Parser::Parser(std::string const& filename)
 void Parser::parse()
 {
 	std::cout << "Parsing " << filename << std::endl;
-	fo << "<class>" << std::endl;
-	inc_indent();
 
-	std::string line;
-
-	auto ignore_line = [this, &line]() { std::getline(fs, line); };
+	auto ignore_line = [this]() { std::getline(fs, line); };
 
 	ignore_line();
 
@@ -26,9 +21,9 @@ void Parser::parse()
 		(this->*(write_functions_type[static_cast<int>(check_type())]))();
 	}
 
-	dec_indent();
-	indent();
-	fo << "</class>" << std::endl;
+	for (auto& a : symbol_table.subroutine_scope) {
+		std::cout << a.first << " " << a.second.index << std::endl;
+	}
 }
 
 Parser::~Parser()
@@ -44,7 +39,7 @@ void Parser::open_files(std::string const& name)
 
 	std::string n = extract_name(filename);
 	n = n.substr(0, n.size() - 1);
-	fo.open(n + ".xml");
+	fo.open(n + ".vm");
 }
 
 void Parser::close_files()
@@ -53,26 +48,8 @@ void Parser::close_files()
 	fo.close();
 }
 
-void Parser::inc_indent()
-{
-	indentation += "  ";
-}
-
-void Parser::dec_indent()
-{
-	Parser::indentation = indentation.substr(0, indentation.size() - 2);
-}
-
-void Parser::indent()
-{
-	fo << indentation;
-}
-
-
 std::string Parser::get_new_token()
 {
-	std::string line;
-
 	std::streampos old_pos = fs.tellg();
 	std::string old_type = type;
 	std::string old_token = token;
@@ -88,691 +65,231 @@ std::string Parser::get_new_token()
 	return new_token;
 }
 
-void Parser::write_line()
+void Parser::to_next_token()
 {
-	indent();
-	fo << "<" << type << ">" << " " << token << " " << "</" << type << ">" << std::endl;
+	std::getline(fs, line);
+	extract_type_and_token(line);
 }
-
-void Parser::write_next_line(std::string& str)
-{
-	std::getline(fs, str);
-	extract_type_and_token(str);
-	write_line();
-}
-
 
 void Parser::write_keyword_class()
 {
-	write_line();
+	//name
+	to_next_token();
+	current_class = token;
+
+	//open paren
+	to_next_token();
 }
 
 void Parser::write_keyword_method()
 {
-	indent();
-	fo << "<subroutineDec>" << std::endl;
-	inc_indent();
 
-	write_line();
-
-	std::string line;
-
-	//keyword return type
-	write_next_line(line);
-
-	//keyword function name
-	write_next_line(line);
-
-	//open parenthesis
-	write_next_line(line);
-
-	indent();
-	fo << "<parameterList>" << std::endl;
-
-	inc_indent();
-	while (std::getline(fs, line)) {
-		extract_type_and_token(line);
-		if (token == ")") {
-			break;
-		}
-
-		write_line();
-	}
-
-	dec_indent();
-
-	indent();
-	fo << "</parameterList>" << std::endl;
-
-	//closed parenthesis
-	write_line();
-
-	indent();
-	fo << "<subroutineBody>" << std::endl;
-	inc_indent();
-
-	//open curly braces
-	write_next_line(line);
-
-	write_statements();
-
-	//closing brace
-	write_line();
-
-	dec_indent();
-	indent();
-	fo << "</subroutineBody>" << std::endl;
-
-	dec_indent();
-	indent();
-	fo << "</subroutineDec>" << std::endl;
 }
 
 void Parser::write_keyword_function()
 {
-	indent();
-	fo << "<subroutineDec>" << std::endl;
-	inc_indent();
-
-	write_line();
+	//func name
+	to_next_token();
+	fo << "function " << current_class << "." << token << " ";
+	std::streampos arg_pos = fo.tellp();
+	fo << " " << std::endl;
 
 	std::string line;
 
-	//keyword return type
-	write_next_line(line);
-
-	//keyword function name
-	write_next_line(line);
-
-	//open parenthesis
-	write_next_line(line);
-
-	indent();
-	fo << "<parameterList>" << std::endl;
-
-	inc_indent();
 	while (std::getline(fs, line)) {
 		extract_type_and_token(line);
-		if (token == ")") {
+		if (token == "return") {
 			break;
 		}
 
-		write_line();
+		(this->*(write_functions_type[static_cast<int>(check_type())]))();
 	}
 
-	dec_indent();
+	std::streampos curr_pos = fo.tellp();
 
-	indent();
-	fo << "</parameterList>" << std::endl;
+	fo.seekp(arg_pos);
+	fo << current_func_args;
+	current_func_args = 0;
 
-	//closed parenthesis
-	write_line();
+	fo.seekp(curr_pos);
 
-	indent();
-	fo << "<subroutineBody>" << std::endl;
-	inc_indent();
-
-	//open curly braces
-	write_next_line(line);
-
-	write_statements();
-
-	//closing brace
-	write_line();
-
-	dec_indent();
-	indent();
-	fo << "</subroutineBody>" << std::endl;
-
-	dec_indent();
-	indent();
-	fo << "</subroutineDec>" << std::endl;
+	write_keyword_return();
 }
 
 void Parser::write_keyword_constructor()
 {
-	indent();
-	fo << "<subroutineDec>" << std::endl;
-	inc_indent();
 
-	write_line();
-
-	std::string line;
-
-	//keyword return type
-	write_next_line(line);
-
-	//keyword function name
-	write_next_line(line);
-
-	//open parenthesis
-	write_next_line(line);
-
-	indent();
-	fo << "<parameterList>" << std::endl;
-
-	inc_indent();
-	while (std::getline(fs, line)) {
-		extract_type_and_token(line);
-		if (token == ")") {
-			break;
-		}
-
-		write_line();
-	}
-
-	dec_indent();
-
-	indent();
-	fo << "</parameterList>" << std::endl;
-
-	//closed parenthesis
-	write_line();
-
-	indent();
-	fo << "<subroutineBody>" << std::endl;
-	inc_indent();
-
-	//open curly braces
-	write_next_line(line);
-
-	write_statements();
-
-	//closing brace
-	write_line();
-
-	dec_indent();
-	indent();
-	fo << "</subroutineBody>" << std::endl;
-
-	dec_indent();
-	indent();
-	fo << "</subroutineDec>" << std::endl;
 }
 
 void Parser::write_keyword_class_var_dec()
 {
-	indent();
-	fo << "<classVarDec>" << std::endl;
-	inc_indent();
 
-	//field or static
-	write_line();
-
-	std::string line;
-	//type
-	write_next_line(line);
-
-	//varname
-	write_next_line(line);
-
-	while (std::getline(fs, line)) {
-		extract_type_and_token(line);
-		if (token != ",") {
-			break;
-		}
-		//comma
-		write_line();
-
-		//varname
-		write_next_line(line);
-	}
-
-	//semi-colon;
-	write_line();
-
-	dec_indent();
-	indent();
-	fo << "</classVarDec>" << std::endl;
 }
 
 void Parser::write_keyword_int()
 {
-	write_line();
 }
 
 void Parser::write_keyword_boolean()
 {
-	write_line();
 }
 
 void Parser::write_keyword_char()
 {
-	write_line();
 }
 
 void Parser::write_keyword_void()
 {
-	write_line();
 }
 
 void Parser::write_keyword_var()
 {
-	std::string line;
-	indent();
-	fo << "<varDec>" << std::endl;
-	inc_indent();
+	//move to type
+	to_next_token();
+	std::string type = token;
 
-	//var
-	write_line();
+	SymbolKind kind = SymbolKind::LOCAL;
 
-	while (std::getline(fs, line)) {
-		extract_type_and_token(line);
-		if (token == ";") {
-			break;
+	//name
+	to_next_token();
+	if (get_new_token() == ",") {
+		while (true) {
+			symbol_table.add_symbol(token, type, kind);
+			current_func_args++;
+			to_next_token();
+			if (token != ",") {
+				break;
+			}
+			to_next_token();
 		}
-
-		write_line();
 	}
-
-	//semi-colon
-	write_line();
-
-	dec_indent();
-	indent();
-	fo << "</varDec>" << std::endl;
+	else {
+		symbol_table.add_symbol(token, type, kind);
+		current_func_args++;
+		to_next_token();
+	}
 }
 
 void Parser::write_keyword_static()
 {
-	write_line();
+	//move to type
+	to_next_token();
+	std::string type = token;
+
+	SymbolKind kind = SymbolKind::STATIC;
+
+	//name
+	to_next_token();
+	if (get_new_token() == ",") {
+		while (true) {
+			symbol_table.add_symbol(token, type, kind);
+			to_next_token();
+			if (token != ",") {
+				break;
+			}
+			to_next_token();
+		}
+	}
+	else {
+		symbol_table.add_symbol(token, type, kind);
+		to_next_token();
+	}
 }
 
 void Parser::write_keyword_field()
 {
-	write_line();
+	//move to type
+	to_next_token();
+	std::string type = token;
+
+	SymbolKind kind = SymbolKind::FIELD;
+
+	//name
+	to_next_token();
+	if (get_new_token() == ",") {
+		while (true) {
+			symbol_table.add_symbol(token, type, kind);
+			to_next_token();
+			if (token != ",") {
+				break;
+			}
+			to_next_token();
+		}
+	}
+	else {
+		symbol_table.add_symbol(token, type, kind);
+		to_next_token();
+	}
 }
 
 void Parser::write_var_index()
 {
-	//identifier
-	write_line();
-	std::string line;
-	//[
-	write_next_line(line);
 
-	write_expression();
-
-	//]
-	write_line();
 }
 
 void Parser::write_subroutine_call()
 {
-	//identifier
-	write_line();
 
-	std::string line;
-
-	std::string new_token = get_new_token();
-
-	if (new_token == ".") {
-		//symbol
-		write_next_line(line);
-
-		//identifier
-		write_next_line(line);
-
-		//open_parenthesis
-		write_next_line(line);
-
-		write_expression_list();
-
-		//close_parenthesis
-		if (token != "(") {
-			write_line();
-		}
-		else write_next_line(line);
-	}
-	else if (new_token == "(") {
-		//open paren
-		write_next_line(line);
-
-		write_expression_list();
-
-		//close_parenthesis
-		if (token != "(") {
-			write_line();
-		}
-		else write_next_line(line);
-	}
 }
 
 void Parser::write_expression_list()
 {
-	indent();
-	fo << "<expressionList>" << std::endl;
-	inc_indent();
 
-	std::string new_token = get_new_token();
-
-	if (new_token != ")") {
-		write_expression();
-
-		while (token == ",") {
-			write_line();
-			write_expression();
-		}
-	}
-
-	dec_indent();
-	indent();
-	fo << "</expressionList>" << std::endl;
 }
 
 void Parser::write_expression()
 {
-	indent();
-	fo << "<expression>" << std::endl;
-	inc_indent();
 
-	auto start_term = [this]()
-	{
-		indent();
-		fo << "<term>" << std::endl;
-		inc_indent();
-	};
-
-	auto end_term = [this]()
-	{
-		dec_indent();
-		indent();
-		fo << "</term>" << std::endl;
-	};
-
-	std::string line;
-
-	TermType term;
-	while (std::getline(fs, line)) {
-		prev_token = token;
-		extract_type_and_token(line);
-
-		if (token == ",") {
-			break;
-		}
-
-		if (token == ";") {
-			break;
-		}
-
-		if (token == ")") {
-			break;
-		}
-
-		if (token == "]") {
-			break;
-		}
-
-		term = check_term_type();
-
-		switch (term) {
-			case TermType::INTEGER_CONSTANT: {
-				start_term();
-				write_int_const();
-				end_term();
-				break;
-			}
-			case TermType::STRING_CONSTANT: {
-				start_term();
-				write_string_const();
-				end_term();
-				break;
-			}
-			case TermType::VAR: {
-				start_term();
-
-				write_identifier();
-
-				end_term();
-				break;
-			}
-			case TermType::VAR_INDEX: {
-				start_term();
-				write_var_index();
-				end_term();
-				break;
-			}
-			case TermType::SUBROUTINE_CALL: {
-				start_term();
-
-				write_subroutine_call();
-
-				end_term();
-				break;
-			}
-			case TermType::EXPRESSION: {
-				start_term();
-				//open_paren
-				write_line();
-				write_expression();
-				//close paren
-				write_line();
-				end_term();
-				break;
-			}
-			case TermType::UNARY_OP: {
-				start_term();
-				write_symbol();
-				start_term();
-				std::string new_token = get_new_token();
-
-				if (new_token == "(") {
-					//(
-					write_next_line(line);
-
-					//expression
-					write_expression();
-
-					write_line();
-				}
-				else write_next_line(line);
-				end_term();
-				end_term();
-				break;
-			}
-			case TermType::OP: {
-				write_symbol();
-				break;
-			}
-			case TermType::KEYWORD_CONSTANT: {
-				start_term();
-				write_keyword();
-				end_term();
-			}
-			default:
-				break;
-		}
-	}
-
-	dec_indent();
-	indent();
-	fo << "</expression>" << std::endl;
 }
 
 
 void Parser::write_keyword_let()
 {
-	indent();
-	fo << "<letStatement>" << std::endl;
-	inc_indent();
 
-	//let
-	write_line();
-
-	std::string line;
-	//varName
-	write_next_line(line);
-
-	std::string new_token = get_new_token();
-	if (new_token == "[") {
-		//[
-		write_next_line(line);
-
-		write_expression();
-
-		//]
-		write_line();
-	}
-
-
-	write_next_line(line);
-
-	write_expression();
-
-	//semi-colon
-	write_line();
-
-	dec_indent();
-	indent();
-	fo << "</letStatement>" << std::endl;
 }
 
 void Parser::write_keyword_do()
 {
-	indent();
-	fo << "<doStatement>" << std::endl;
-	inc_indent();
 
-	//do
-	write_line();
-
-	std::string line;
-	std::getline(fs, line);
-	extract_type_and_token(line);
-
-	write_subroutine_call();
-
-	//semicolon
-	write_next_line(line);
-
-	dec_indent();
-	indent();
-	fo << "</doStatement>" << std::endl;
 }
 
 void Parser::write_keyword_if()
 {
-	indent();
-	fo << "<ifStatement>" << std::endl;
-	inc_indent();
 
-	//if
-	write_line();
-
-	std::string line;
-	//open paren
-	write_next_line(line);
-
-	write_expression();
-
-	//close_paren
-	write_line();
-
-	//open curly
-	write_next_line(line);
-
-	write_statements();
-
-	//semicolon
-	write_line();
-
-	line = get_new_token();
-	if (line == "else") {
-		write_keyword_else();
-	}
-
-	dec_indent();
-	indent();
-	fo << "</ifStatement>" << std::endl;
 }
 
 void Parser::write_keyword_else()
 {
-	std::string line;
-
-	//else
-	write_next_line(line);
-
-	//open curly
-	write_next_line(line);
-
-	write_statements();
-
-	//semicolon
-	write_line();
 }
 
 void Parser::write_keyword_while()
 {
-	indent();
-	fo << "<whileStatement>" << std::endl;
-	inc_indent();
 
-	//while
-	write_line();
-
-	std::string line;
-	//open parenthesis
-	write_next_line(line);
-
-	write_expression();
-
-	//close_parenthesis
-	write_line();
-
-	//open curly brackets
-	write_next_line(line);
-
-	write_statements();
-
-	//close curly brackets
-	write_line();
-
-	dec_indent();
-	indent();
-	fo << "</whileStatement>" << std::endl;
 }
 
 void Parser::write_keyword_return()
 {
-	indent();
-	fo << "<returnStatement>" << std::endl;
-	inc_indent();
-
-	//return
-	write_line();
-
-	std::string new_token = get_new_token();
-
-	if (new_token != ";") {
-		write_expression();
-		write_line();
-	}
-	else write_next_line(new_token);
-
-	dec_indent();
-	indent();
-	fo << "</returnStatement>" << std::endl;
+	fo << "return" << std::endl;
 }
 
 void Parser::write_keyword_true()
 {
-	write_line();
+
 }
 
 void Parser::write_keyword_false()
 {
-	write_line();
+
 }
 
 void Parser::write_keyword_null_type()
 {
-	write_line();
+
 }
 
 void Parser::write_keyword_this()
 {
-	write_line();
+
 }
 
 void Parser::write_keyword()
@@ -782,79 +299,41 @@ void Parser::write_keyword()
 
 void Parser::write_less_than()
 {
-	indent();
-	fo << "<symbol> &lt; </symbol>" << std::endl;
 }
 
 void Parser::write_greater_than()
 {
-	indent();
-	fo << "<symbol> &gt; </symbol>" << std::endl;
+
 }
 
 void Parser::write_equals()
 {
-	indent();
-	fo << "<symbol> &eq; </symbol>" << std::endl;
+
 }
 
 void Parser::write_symbol()
 {
-	if (token == "<") {
-		write_less_than();
-	}
-	else if (token == ">") {
-		write_greater_than();
-	}
-	else if (token == "==") {
-		write_equals();
-	}
-	write_line();
+
 }
 
 void Parser::write_int_const()
 {
-	write_line();
+
 }
 
 void Parser::write_string_const()
 {
-	write_line();
+
 }
 
 void Parser::write_identifier()
 {
-	write_line();
+
 }
 
 void Parser::write_statements()
 {
-	std::string line;
-	bool initial_statement_indent = false;
-	while (std::getline(fs, line)) {
-		extract_type_and_token(line);
-		if (token == "}") {
-			break;
-		}
 
-		if (is_statement()) {
-			if (initial_statement_indent == false) {
-				indent();
-				fo << "<statements>" << std::endl;
-				inc_indent();
-				initial_statement_indent = true;
-			}
-		}
-
-		(this->*(write_functions_type[static_cast<int>(check_type())]))();
-	}
-
-	if (initial_statement_indent) {
-		dec_indent();
-		initial_statement_indent = false;
-		indent();
-		fo << "</statements>" << std::endl;
-	}
 }
 
 void Parser::extract_type_and_token(std::string const& str)

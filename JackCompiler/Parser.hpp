@@ -6,6 +6,7 @@
 #include <sstream>
 
 #include "Helpers.hpp"
+#include "SymbolTable.hpp"
 
 enum class TokenType
 {
@@ -68,24 +69,19 @@ class Parser
 	std::string type;
 	std::string token;
 	std::string prev_token;
-	std::string indentation = "";
+	std::string line;
+	std::string current_class;
+	size_t current_func_args = 0;
+	SymbolTable symbol_table;
 
 private:
 	void open_files(std::string const& name);
 
 	void close_files();
 
-	void inc_indent();
-
-	void dec_indent();
-
-	void indent();
-
 	std::string get_new_token();
 
-	void write_line();
-
-	void write_next_line(std::string& str);
+	void to_next_token();
 
 	void write_keyword_class();
 
