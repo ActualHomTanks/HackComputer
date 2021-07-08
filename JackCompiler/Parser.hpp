@@ -1,9 +1,8 @@
 #pragma once
-#include <iostream>
+
 #include <vector>
 #include <string>
 #include <fstream>
-#include <sstream>
 
 #include "Helpers.hpp"
 #include "SymbolTable.hpp"
@@ -56,6 +55,8 @@ enum class TermType
 	EXPRESSION,
 	UNARY_OP,
 	OP,
+	OPEN_PAREN,
+	CLOSE_PAREN,
 	NUM_OF_ITEMS_IN_ENUM,
 };
 
@@ -69,10 +70,15 @@ class Parser
 	std::string type;
 	std::string token;
 	std::string prev_token;
+	std::string prev_token_index;
 	std::string line;
 	std::string current_class;
 	size_t current_func_args = 0;
 	SymbolTable symbol_table;
+	size_t while_label_count = 0;
+	size_t if_label_count = 0;
+	std::string name_without_extension;
+	bool is_conditional = false;
 
 private:
 	void open_files(std::string const& name);

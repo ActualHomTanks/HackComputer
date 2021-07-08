@@ -87,6 +87,9 @@ int main(int argc, char* argv[])
 
 	file << "w";
 
+	int a = 42;
+	file << a;
+
 	file.close();
 
 	std::cout << "Jack Analyzer finished" << std::endl;

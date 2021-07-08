@@ -745,7 +745,7 @@ private:
 			if (token != "(") {
 				write_line();
 			}
-			else write_next_line(line);
+			else write_next_line(line);  //empty brackets case
 		}
 	}
 
@@ -889,6 +889,7 @@ private:
 					start_term();
 					write_keyword();
 					end_term();
+					break;
 				}
 				default:
 					break;
@@ -1332,7 +1333,7 @@ private:
 				return TermType::UNARY_OP;
 			}
 
-			if (token == "-" && (prev_token == "(" || prev_token == "=")) {
+			if (token == "-" && (prev_token == "(" || prev_token == "=" || prev_token == ",")) {
 				return TermType::UNARY_OP;
 			}
 
