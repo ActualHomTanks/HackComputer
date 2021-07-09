@@ -84,6 +84,7 @@ public:
 		}
 		else {
 			std::cout << "SYMBOL NOT FOUND" << std::endl;
+			return Info(0, SymbolKind::NUM_OF_ITEMS_IN_ENUM, "invalid");
 		}
 	}
 

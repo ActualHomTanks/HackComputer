@@ -79,6 +79,7 @@ class Parser
 	size_t if_label_count = 0;
 	std::string name_without_extension;
 	bool is_conditional = false;
+	bool is_do = false;
 
 private:
 	void open_files(std::string const& name);

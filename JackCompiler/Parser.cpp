@@ -95,7 +95,89 @@ void Parser::write_keyword_class()
 
 void Parser::write_keyword_method()
 {
+	//return type
+	to_next_token();
 
+	bool is_void = false;
+	if (token == "void") {
+		is_void = true;
+	}
+
+	//meth_name
+	to_next_token();
+	std::string current_name = token;
+	std::cout << "method " << token << std::endl;
+	fo << "function " << current_class << "." << token << " ";
+	std::streampos arg_pos = fo.tellp();
+	fo << " " << std::endl;
+
+
+
+	//open paren
+	to_next_token();
+
+	symbol_table.add_symbol("this", current_class, SymbolKind::ARG);
+
+	if (get_new_token() != ")") {
+		do {
+			extract_type_and_token(line);
+			if (token == ")") {
+				break;
+			}
+
+			//move to type
+			to_next_token();
+			std::string type = token;
+
+			SymbolKind kind = SymbolKind::ARG;
+
+			//name
+			to_next_token();
+
+			symbol_table.add_symbol(token, type, kind);
+
+		} while (std::getline(fs, line));
+
+	}
+
+	for (auto& a : symbol_table.subroutine_scope) {
+		std::cout << "function arg " << a.first << " " << a.second.type << std::endl;
+	}
+
+	fo << "push argument 0" << std::endl;
+	fo << "pop pointer 0" << std::endl;
+
+	//open curly paren
+	to_next_token();
+
+	while (std::getline(fs, line)) {
+		extract_type_and_token(line);
+		if (token == "return") {
+			break;
+		}
+
+		std::string new_token = get_new_token();
+		if (new_token == "function" || new_token == "method") {
+			break;
+		}
+
+		(this->*(write_functions_type[static_cast<int>(check_type())]))();
+	}
+
+	std::streampos curr_pos = fo.tellp();
+
+	fo.seekp(arg_pos);
+	fo << current_func_args;
+	current_func_args = 0;
+
+	fo.seekp(curr_pos);
+
+	if (is_void) {
+		fo << "push constant 0" << std::endl;
+	}
+
+	write_keyword_return();
+	symbol_table.clear_subroutine();
 }
 
 void Parser::write_keyword_function()
@@ -144,6 +226,9 @@ void Parser::write_keyword_function()
 		std::cout << "function arg " << a.first << " " << a.second.type << std::endl;
 	}
 
+	//open curly paren
+	to_next_token();
+
 	while (std::getline(fs, line)) {
 		extract_type_and_token(line);
 		if (token == "return") {
@@ -176,12 +261,92 @@ void Parser::write_keyword_function()
 
 void Parser::write_keyword_constructor()
 {
+	//return type
+	to_next_token();
 
+	//func name
+	to_next_token();
+	std::string current_name = token;
+	std::cout << "constructor " << token << std::endl;
+	fo << "function " << current_class << "." << token << " ";
+	std::streampos arg_pos = fo.tellp();
+	fo << " " << std::endl;
+
+	//open paren
+	to_next_token();
+
+	if (get_new_token() != ")") {
+		do {
+			extract_type_and_token(line);
+			if (token == ")") {
+				break;
+			}
+
+			//move to type
+			to_next_token();
+			std::string type = token;
+
+			SymbolKind kind = SymbolKind::ARG;
+
+			//name
+			to_next_token();
+
+			symbol_table.add_symbol(token, type, kind);
+
+		} while (std::getline(fs, line));
+
+	}
+
+	for (auto& a : symbol_table.subroutine_scope) {
+		std::cout << "function arg " << a.first << " " << a.second.type << std::endl;
+	}
+
+	for (auto& a : symbol_table.class_scope) {
+		std::cout << "class arg " << a.first << " " << a.second.type << " " << a.second.index << std::endl;
+	}
+
+	fo << "push constant " << symbol_table.class_field_index << std::endl;
+
+	fo << "call Memory.alloc 1" << std::endl;
+
+	fo << "pop pointer 0" << std::endl;
+
+	//open curly paren
+	to_next_token();
+
+	while (std::getline(fs, line)) {
+		extract_type_and_token(line);
+		if (token == "return") {
+			break;
+		}
+
+		std::string new_token = get_new_token();
+		if (new_token == "function" || new_token == "method") {
+			break;
+		}
+
+		(this->*(write_functions_type[static_cast<int>(check_type())]))();
+	}
+
+	std::streampos curr_pos = fo.tellp();
+
+	fo.seekp(arg_pos);
+	fo << current_func_args;
+	current_func_args = 0;
+
+	fo.seekp(curr_pos);
+
+	/*if (is_void) {
+		fo << "push constant 0" << std::endl;
+	}*/
+
+	write_keyword_return();
+	symbol_table.clear_subroutine();
 }
 
 void Parser::write_keyword_class_var_dec()
 {
-
+	std::cout << "";
 }
 
 void Parser::write_keyword_int()
@@ -287,31 +452,22 @@ void Parser::write_var_index()
 
 void Parser::write_subroutine_call()
 {
-	//identifier
+	//identifier or class name if method
 	std::string t = token;
 
 	std::string new_token = get_new_token();
 
 	if (new_token == ".") {
-		//symbol
-		to_next_token();
-		t += token;
-
-		//identifier
-		to_next_token();
-		t += token;
-
-		//open_parenthesis
+		//.
 		to_next_token();
 
-		/*while (std::getline(fs, line)) {
-			if (token == ")") {
-				t += token;
-				break;
-			}
+		//meth name
+		to_next_token();
 
-			t += token;
-		}*/
+		std::string meth_name = token;
+
+		//open paren
+		to_next_token();
 
 		size_t args = 0;
 		std::string new_token = get_new_token();
@@ -326,12 +482,22 @@ void Parser::write_subroutine_call()
 			}
 		}
 
-		////close paren
+		//close paren
 		//to_next_token();
 
-		fo << "call " << t << " " << args << std::endl;
+		Info const& info = symbol_table.return_info(t);
+
+		//symbol not found case
+		if (info.kind == SymbolKind::NUM_OF_ITEMS_IN_ENUM) {
+			fo << "call " << t << "." << meth_name << " " << args << std::endl;
+		}
+		else {
+			fo << "push " << SymbolTable::kind_to_string(info.kind) << " " << info.index << std::endl;
+			fo << "call " << info.type << "." << meth_name << " " << args + 1 << std::endl;
+		}
+
 	}
-	else if (new_token == "(") {
+	else if (new_token == "(" && is_do == false) {
 		//open paren
 		to_next_token();
 
@@ -352,6 +518,29 @@ void Parser::write_subroutine_call()
 		to_next_token();
 
 		fo << "call " << t << " " << args << std::endl;
+	}
+	else if (new_token == "(" && is_do == true) {
+		//open paren
+		to_next_token();
+
+		size_t args = 0;
+		std::string new_token = get_new_token();
+
+		if (new_token != ")") {
+			write_expression();
+			args++;
+
+			while (token == ",") {
+				write_expression();
+				args++;
+			}
+		}
+
+		//close paren
+		to_next_token();
+
+		fo << "push pointer 0" << std::endl;
+		fo << "call " << current_class << "." << t << " " << args + 1 << std::endl;
 	}
 }
 
@@ -427,6 +616,10 @@ void Parser::write_expression()
 				operands.pop();
 			}
 			break;
+		}
+
+		if (token == "|") {
+			std::cout << "";
 		}
 
 		term = check_term_type();
@@ -572,6 +765,14 @@ void Parser::write_expression()
 			case TermType::OP: {
 				//if (token == "=") continue;
 
+				if (token == "{") {
+					break;
+				}
+
+				if (token == "}") {
+					return;
+				}
+
 				if (token[0] == '&') {
 					std::string op = token;
 					write_expression();
@@ -677,7 +878,9 @@ void Parser::write_keyword_do()
 	//identifier
 	to_next_token();
 
+	is_do = true;
 	write_subroutine_call();
+	is_do = false;
 
 	fo << "pop temp 0" << std::endl;
 }
@@ -861,6 +1064,10 @@ void Parser::extract_type_and_token(std::string const& str)
 	token_pos += 2;
 
 	token = str.substr(token_pos, str.find_last_of('<') - token_pos - 1);
+
+	if (token == "4") {
+		std::cout << "";
+	}
 }
 
 void Parser::write_functions_vector_init()
@@ -885,8 +1092,8 @@ void Parser::write_functions_keyword_type_vector_init()
 	write_functions_keyword_type[static_cast<int>(KeywordType::CHAR)] = &Parser::write_keyword_char;
 	write_functions_keyword_type[static_cast<int>(KeywordType::VOID)] = &Parser::write_keyword_void;
 	write_functions_keyword_type[static_cast<int>(KeywordType::VAR)] = &Parser::write_keyword_var;
-	write_functions_keyword_type[static_cast<int>(KeywordType::STATIC)] = &Parser::write_keyword_class_var_dec;
-	write_functions_keyword_type[static_cast<int>(KeywordType::FIELD)] = &Parser::write_keyword_class_var_dec;
+	write_functions_keyword_type[static_cast<int>(KeywordType::STATIC)] = &Parser::write_keyword_static;
+	write_functions_keyword_type[static_cast<int>(KeywordType::FIELD)] = &Parser::write_keyword_field;
 	write_functions_keyword_type[static_cast<int>(KeywordType::LET)] = &Parser::write_keyword_let;
 	write_functions_keyword_type[static_cast<int>(KeywordType::DO)] = &Parser::write_keyword_do;
 	write_functions_keyword_type[static_cast<int>(KeywordType::IF)] = &Parser::write_keyword_if;
