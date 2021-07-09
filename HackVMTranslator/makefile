@@ -1,1 +1,0 @@
-g++-9 -Wall *.cpp -std=c++17 -o VMTranslator
