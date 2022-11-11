@@ -7,8 +7,8 @@ All of the following tools are written in C++
 
 **HackVMTranslator:** Converts the HackVM code into Hack Assembly.
 
-**(WIP) JackCompiler:** Converts the high level Jack Programming Language into HackVM code.
+**JackCompiler:** Converts the high level Jack Programming Language into HackVM code.
 - Currently tokenizes and parses .jack files and outputs a parse tree in xml form.
-- (WIP) Code generation afterr parsing into vm code.
+- Code generation afterr parsing into vm code.
 
-**(TODO) JackOS:** Operating System for the Hack Computer written using the Jack Programming Language.
+**JackOS:** Operating System for the Hack Computer written using the Jack Programming Language.
